@@ -1,0 +1,26 @@
+# depslib dependency file v1.0
+1516828669 source:/home/david/rainbowtable_spammer/rainbowtable_spammer/main.cpp
+	<iostream>
+	<cstdio>
+	<stdlib.h>
+	"sha256.h"
+	<cstring>
+	<math.h>
+	<secp256k1.h>
+	<thread>
+	<sys/socket.h>
+	<cppconn/driver.h>
+	<cppconn/exception.h>
+	<cppconn/resultset.h>
+	<cppconn/statement.h>
+	<boost/random/random_device.hpp>
+	<boost/random/uniform_int_distribution.hpp>
+
+1516735908 /home/david/rainbowtable_spammer/rainbowtable_spammer/sha256.h
+	<string>
+
+1516737468 source:/home/david/rainbowtable_spammer/rainbowtable_spammer/sha256.cpp
+	<cstring>
+	<fstream>
+	"sha256.h"
+
