@@ -23,6 +23,57 @@
 
 using namespace std;
 
+char fromhex(char c)
+{
+    if ( isxdigit(c) )
+    {
+        if ( isdigit(c) )
+        {
+            c -= '0';
+        } else {
+            c = tolower(c);
+            c = c - 'a' + 10;
+        }
+    } else { c = 0; }
+    return c;
+}
+
+
+char *hexlify(char *str)
+{
+    int l,i;
+    char* t;
+    l = strlen(str)*2;
+    t = static_cast<char*>(malloc(l));
+    if ( &t  )
+    {
+        for(i=0; i<l; i++)
+        {
+            sprintf(t+2*i, "%02x", str[i]);
+        }
+        return t;
+    }
+    return NULL;
+}
+
+
+char *unhexlify(char *hstr)
+{
+    int l, i; char *t; char c;
+    l = strlen(hstr)/2;
+    t = static_cast<char*>(malloc(l));
+    if (t)
+    {
+        for(i=0; i<l; i++)
+        {
+            c = fromhex( hstr[2*i+1] ) + 16*fromhex( hstr[2*i] );
+            t[i] = c;
+        }
+    }
+    return t;
+}
+
+
 int connexion_mysql(string host,string user,string passwd,string database, int port,string query)
 {
 	cout << endl;
@@ -87,23 +138,35 @@ void get_pkey(unsigned char* pkey)
     temp=sha256(str_rand_generator(rand()%32));
     std::copy(temp.begin(),temp.end(),pkey);
     pkey[temp.size()]='\0';
+    //cout << "taille " << temp.size() << " " << temp << endl;
+}
+
+void gest_err(const char* message, void* data){
+    cout << message << endl;
+    cout << data << endl;
 }
 
 void get_pubkey(unsigned char* in_pkey,unsigned char* out_pubkey)
 {
     string res="";
     size_t taille=64;
+    int32_t ecount = 0;
     secp256k1_context *ctx;
     secp256k1_pubkey pubkey;
+    const char* message = "gest erreur - callback appelé";
+    void* data;
+    void (*counting_illegal_callback_fn)(const char*,void*) = gest_err;
 
     ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN);
-    cout<<"context ok";
-    if(!secp256k1_ec_pubkey_create(ctx,&pubkey,in_pkey)){
+    secp256k1_context_set_error_callback(ctx,counting_illegal_callback_fn,&ecount);
+    secp256k1_context_set_illegal_callback(ctx,counting_illegal_callback_fn,&ecount);
+    if(secp256k1_ec_pubkey_create(ctx,&pubkey,in_pkey)!=1){
         cout<< "ERROR : pubkey creation is fucken fucked, mate. BIG TIME"<<endl;
     }
-    //pour générer le binary
+
     //pubkey.data;
-    secp256k1_ec_pubkey_serialize(ctx,out_pubkey,&taille,&pubkey,SECP256K1_FLAGS_BIT_COMPRESSION);
+    secp256k1_ec_pubkey_serialize(ctx,out_pubkey,&taille,&pubkey,SECP256K1_EC_COMPRESSED);
+    cout << hexlify( out_pubkey) << endl;
     secp256k1_context_destroy(ctx);
 }
 
@@ -116,10 +179,10 @@ int main()
     string query = "select address from incoming limit 10";
     int port = 33666;
     int i;
-    unsigned char pkey[65];//un char de plus pour le \0
-    unsigned char pubkey[53];
+    unsigned char pkey[65];//65
+    unsigned char pubkey[53];//53
     freopen("/home/david/output.txt","w",stdout);
-    for(i=0;i<10;i++){
+    for(i=0;i<10000;i++){
         get_pkey(pkey);
         get_pubkey(pkey,pubkey);
         cout << pkey << ";" << pubkey << std::endl;
